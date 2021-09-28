@@ -12,6 +12,7 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+
 app.set("view engine", "ejs");
 
 app.use(bodyParser.urlencoded({extended: true}));
@@ -27,7 +28,9 @@ app.get("/urls/new", (req, res) => {
 
 
 app.get( "/urls/:shortURL", (req, res) => {
-  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL}
+  const templateVars = {
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL].longURL}
   res.render("urls_shows", templateVars)
 });
 
@@ -55,9 +58,14 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-  }
-  console.log(urlDatabase[shortURL].longURL);
+  urlDatabase[shortURL] = req.body.longURL
+  
+  
   res.redirect(`/urls/${shortURL}`);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
+  res.redirect("/urls");
 });
