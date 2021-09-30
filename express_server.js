@@ -10,8 +10,14 @@ function generateRandomString() {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 
 const users = { 
@@ -52,6 +58,15 @@ const findUserByEmail = function (email, users) {
   return false;
 };
 
+const userBasedOnCookie = function(cookie, userDB) {
+  for(let user in userDB) {
+    if(cookie === user){
+      return true;
+    }
+  }
+  return false;
+}
+
 const userIdFromEmail = function(email, userDatabase) {
   for (const user in userDatabase) {
     if (userDatabase[user].email === email) {
@@ -60,43 +75,75 @@ const userIdFromEmail = function(email, userDatabase) {
   }
 };
 
+const urlsForUser = function (id, urlDatabase) {
+  const userURLS = {}
+  for(const shortUrl in urlDatabase) {
+    if(urlDatabase[shortUrl].userID === id) {
+      userURLS[shortUrl] = urlDatabase[shortUrl]
+    }
+  }
+  return userURLS;
+}
+
+
+
 app.get("/urls", (req, res) =>{
   const templateVars = {
-    urls: urlDatabase,
+    urls: urlsForUser(req.session.user_id, urlDatabase),
     user: users[req.session.user_id]
   }
+  
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL
-  
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.session.user_id
+  }
   
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/new", (req, res) => {
+  if(!userBasedOnCookie(req.session.user_id, users)) {
+    res.redirect("/urls");
+    return;
+  }
   const templateVars = {
     user: users[req.session.user_id]
+
   };
   res.render("urls_new", templateVars);
 });
 
 
 app.get( "/urls/:shortURL", (req, res) => {
-  const templateVars = {
+  
+    const templateVars = {
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL,
+    userUrls:  urlsForUser(req.session.user_id, urlDatabase),
     user: users[req.session.user_id]
   };
-    console.log(urlDatabase[req.params.shortURL])
+  
+  if (!urlDatabase[req.params.shortURL]) {
+    const errorMessage = 'This short URL does not exist.';
+    res.status(404).send(errorMessage);
+    return;
+  } else if (!req.session.user_id || !templateVars.userUrls[req.params.shortURL]) {
+    const errorMessage = 'You are not authorized to see this URL.';
+    res.status(404).send(errorMessage);
+    return;
+  } 
   res.render("urls_shows", templateVars)
+  
 });
 
 app.post("/urls/:shortURL", (req, res) =>{
   const shortURL = req.params.shortURL
-  urlDatabase[shortURL] = req.body.longURL
+  urlDatabase[shortURL].longURL = req.body.longURL
 
   res.redirect(`/urls/${shortURL}`);
 
@@ -119,6 +166,10 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) =>{
+  if(userBasedOnCookie(req.session.user_id, users)) {
+    res.redirect("/urls");
+    return;
+  }
   const templateVars = {user: null};
   res.render("urls_register", templateVars);
 });
@@ -151,6 +202,10 @@ app.post("/register", (req, res) =>{
 })
 
 app.get("/login", (req, res) =>{
+  if(userBasedOnCookie(req.session.user_id, users)) {
+    res.redirect("/urls");
+    return;
+  }
   const templateVars = {
     user: users[req.session.user_id],
 }
