@@ -1,4 +1,4 @@
-const findUserByEmail = function (email, userDatabase) {
+const findUserByEmail = function(email, userDatabase) {
   for (let userId in userDatabase) {
     const user = userDatabase[userId];
     if (email === user.email) {
@@ -10,13 +10,13 @@ const findUserByEmail = function (email, userDatabase) {
 };
 
 const userBasedOnCookie = function(cookie, userDB) {
-  for(let user in userDB) {
-    if(cookie === user){
+  for (let user in userDB) {
+    if (cookie === user) {
       return true;
     }
   }
   return false;
-}
+};
 
 const userIdFromEmail = function(email, userDatabase) {
   for (const user in userDatabase) {
@@ -26,18 +26,21 @@ const userIdFromEmail = function(email, userDatabase) {
   }
 };
 
-const urlsForUser = function (id, urlDatabase) {
-  const userURLS = {}
-  for(const shortUrl in urlDatabase) {
-    if(urlDatabase[shortUrl].userID === id) {
-      userURLS[shortUrl] = urlDatabase[shortUrl]
+const urlsForUser = function(id, urlDatabase) {
+  const userURLS = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userURLS[shortURL] = {
+        longURL: urlDatabase[shortURL].longURL,
+        userID: urlDatabase[shortURL].userID
+      };
     }
   }
   return userURLS;
-}
-function generateRandomString() {
+};
+const generateRandomString = function() {
   return Math.random().toString(36).substr(2, 6);
-}
+};
 
 module.exports = {
   findUserByEmail,
@@ -45,4 +48,4 @@ module.exports = {
   userIdFromEmail,
   urlsForUser,
   generateRandomString
-}
+};
