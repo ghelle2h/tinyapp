@@ -2,10 +2,9 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
 const cookieSession = require("cookie-session");
 const bcrypt = require('bcryptjs');
-const {findUserByEmail, userBasedOnCookie, userIdFromEmail, urlsForUser, generateRandomString} = require('./helper');
+const { findUserByEmail, userBasedOnCookie, userIdFromEmail, urlsForUser, generateRandomString } = require('./helper');
 
 const urlDatabase = {
   b6UTxQ: {
@@ -34,7 +33,7 @@ const users = {
 
 app.set("view engine", "ejs");
 
-app.use(cookieParser());
+
 
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -45,14 +44,27 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000,
 }));
 
+app.get("/", (req, res) => {
+  if (userBasedOnCookie(req.session.user_id, users)) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
+});
+
 
 app.get("/urls", (req, res) =>{
   const templateVars = {
     urls: urlsForUser(req.session.user_id, urlDatabase),
     user: users[req.session.user_id]
   };
+  if(templateVars.user) {
+    res.render("urls_index", templateVars);
+  } else {
+    res.status(404).send("Please login to view URLS page");
+  }
   
-  res.render("urls_index", templateVars);
+  
 });
 
 app.post("/urls", (req, res) => {
@@ -67,7 +79,7 @@ app.post("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   if (!userBasedOnCookie(req.session.user_id, users)) {
-    res.redirect("/urls");
+    res.redirect("/login");
     return;
   }
   const templateVars = {
@@ -79,32 +91,34 @@ app.get("/urls/new", (req, res) => {
 
 
 app.get("/urls/:shortURL", (req, res) => {
-  
+  if (urlDatabase[req.params.shortURL]) {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL,
     userUrls:  urlsForUser(req.session.user_id, urlDatabase),
     user: users[req.session.user_id]
   };
-  
-  if (!urlDatabase[req.params.shortURL]) {
+  if (!req.session.user_id || !templateVars.userUrls[req.params.shortURL]) {
+    const errorMessage = 'You are not authorized to see this URL.';
+    res.status(404).send(errorMessage);
+    return; 
+  }
+  res.render("urls_shows", templateVars);
+  }  
     const errorMessage = 'This short URL does not exist.';
     res.status(404).send(errorMessage);
     return;
-  } else if (!req.session.user_id || !templateVars.userUrls[req.params.shortURL]) {
-    const errorMessage = 'You are not authorized to see this URL.';
-    res.status(404).send(errorMessage);
-    return;
-  }
-  res.render("urls_shows", templateVars);
+   
+  })
   
-});
+  
+
 
 app.post("/urls/:shortURL", (req, res) =>{
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL].longURL = req.body.longURL;
 
-  res.redirect(`/urls/${shortURL}`);
+  res.redirect(`/urls`);
 
 });
 
