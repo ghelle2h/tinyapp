@@ -1,3 +1,4 @@
+
 const findUserByEmail = function(email, userDatabase) {
   for (let userId in userDatabase) {
     const user = userDatabase[userId];
